@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node download-images.js:*)",
+      "Bash(node update-image-urls.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

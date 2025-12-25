@@ -1,0 +1,973 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Learning - Toddler Typing Fun!</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Comic Sans MS", "Trebuchet MS", system-ui, sans-serif;
+            background: radial-gradient(circle at top, #ffe066, #ff9ff3 35%, #74b9ff);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            background: linear-gradient(120deg, #ffeaa7, #fab1a0, #a29bfe, #81ecec);
+            background-size: 300% 300%;
+            animation: pastel-shift 16s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game {
+            width: min(960px, 95vw);
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            padding: 32px 40px 40px;
+            border: 8px solid #fff;
+            position: relative;
+            z-index: 2;
+        }
+
+        .title {
+            font-size: clamp(32px, 4vw, 56px);
+            text-align: center;
+            margin: 0 0 12px;
+            color: #ff6b6b;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #fff;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: clamp(18px, 2vw, 24px);
+            margin: 0 0 24px;
+            color: #333;
+        }
+
+        .typing-zone {
+            min-height: 220px;
+            border-radius: 24px;
+            border: 6px dashed #74b9ff;
+            padding: 24px;
+            background: linear-gradient(135deg, #ffffff, #fff8e7);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .typing-zone:focus-within {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2);
+        }
+
+        .prompt {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 18px;
+            color: #666;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 6px 12px;
+            border-radius: 999px;
+        }
+
+        .letter {
+            font-size: clamp(48px, 6vw, 80px);
+            font-weight: 800;
+            color: #222;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 200, 0.8));
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15), 0 0 30px rgba(255, 107, 107, 0.3);
+            transform-origin: center;
+        }
+
+        .letter.visible {
+            opacity: 1;
+            animation: wiggle 600ms ease-in-out, glow 1200ms ease-in-out infinite alternate, pulse 2000ms ease-in-out infinite;
+        }
+
+        .letter-falling {
+            position: fixed;
+            font-size: clamp(120px, 15vw, 200px);
+            font-weight: 800;
+            color: #222;
+            pointer-events: none;
+            z-index: 1000;
+            animation: fall-and-fade 800ms ease-out forwards;
+            transform-origin: center;
+        }
+
+        .letter.space {
+            width: 32px;
+            height: 32px;
+            border: 2px dotted #ccc;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .burst {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            opacity: 0;
+            animation: burst 500ms ease-out forwards;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: none;
+            background: #6c5ce7;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #4b3bbd;
+            transition: transform 0.1s ease;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #4b3bbd;
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 18px;
+            color: #444;
+            margin-top: 16px;
+        }
+
+        .floating-shapes {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.55;
+            animation: floaty 12s ease-in-out infinite;
+            filter: blur(0.2px);
+        }
+
+        .shape.circle {
+            border-radius: 50%;
+        }
+
+        .shape.triangle {
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 86px solid rgba(255, 154, 162, 0.9);
+            background: transparent;
+        }
+
+        @keyframes pop-in {
+            0% {
+                transform: scale(12) translateY(-160px);
+                opacity: 0;
+            }
+
+            80% {
+                transform: scale(1.08) translateY(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes wiggle {
+            0% {
+                transform: scale(1.2) rotate(-4deg);
+            }
+
+            40% {
+                transform: scale(1.05) rotate(3deg);
+            }
+
+            70% {
+                transform: scale(1.02) rotate(-2deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes burst {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0.2) translate(var(--x), var(--y));
+                opacity: 0;
+            }
+        }
+
+        @keyframes pastel-shift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes floaty {
+            0% {
+                transform: translateY(0px) translateX(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-18px) translateX(14px) rotate(6deg);
+            }
+
+            100% {
+                transform: translateY(0px) translateX(0px) rotate(0deg);
+            }
+        }
+
+        @keyframes glow {
+            0% {
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15), 0 0 30px rgba(255, 107, 107, 0.3);
+            }
+
+            100% {
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15), 0 0 50px rgba(255, 107, 107, 0.6);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes fall-and-fade {
+            0% {
+                transform: translate(0, -200px) scale(3) rotate(15deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(var(--end-x), var(--end-y)) scale(1) rotate(0deg);
+                opacity: 0;
+            }
+        }
+
+        .confetti-piece {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+            z-index: 9999;
+            pointer-events: none;
+            animation: confetti-fall 3s linear forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .word-image-container {
+            text-align: center;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .word-image {
+            width: min(400px, 80vw);
+            height: min(400px, 80vw);
+            object-fit: contain;
+            filter: saturate(0) brightness(0.3);
+            transition: filter 0.3s ease, transform 0.3s ease;
+            border-radius: 20px;
+        }
+
+        .word-image.correct-flash {
+            animation: image-correct-pulse 0.6s ease;
+        }
+
+        .word-image.wrong-shake {
+            animation: image-shake 0.5s ease;
+        }
+
+        @keyframes image-correct-pulse {
+            0% {
+                transform: scale(1);
+                filter: saturate(var(--current-saturation, 0%)) brightness(var(--current-brightness, 0.3)) drop-shadow(0 0 0 rgba(84, 255, 84, 0));
+            }
+            50% {
+                transform: scale(1.08);
+                filter: saturate(calc(var(--current-saturation, 0%) + 20%)) brightness(calc(var(--current-brightness, 0.3) + 0.2)) drop-shadow(0 0 20px rgba(84, 255, 84, 0.8));
+            }
+            100% {
+                transform: scale(1);
+                filter: saturate(var(--current-saturation, 0%)) brightness(var(--current-brightness, 0.3)) drop-shadow(0 0 0 rgba(84, 255, 84, 0));
+            }
+        }
+
+        @keyframes image-shake {
+            0%, 100% {
+                transform: translateX(0) rotate(0deg);
+            }
+            20% {
+                transform: translateX(-15px) rotate(-3deg);
+            }
+            40% {
+                transform: translateX(15px) rotate(3deg);
+            }
+            60% {
+                transform: translateX(-10px) rotate(-2deg);
+            }
+            80% {
+                transform: translateX(10px) rotate(2deg);
+            }
+        }
+
+        .target-word {
+            font-size: clamp(40px, 5vw, 64px);
+            font-weight: 800;
+            text-align: center;
+            margin: 16px 0;
+            letter-spacing: 8px;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 0 #fff;
+        }
+
+        .target-word .letter-box {
+            display: inline-block;
+            width: 60px;
+            height: 80px;
+            margin: 0 4px;
+            border: 4px solid #74b9ff;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            line-height: 80px;
+            text-align: center;
+            position: relative;
+        }
+
+        .target-word .letter-box::before {
+            content: attr(data-letter);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            line-height: 80px;
+            color: rgba(180, 180, 180, 0.3);
+            font-weight: 800;
+            font-size: clamp(40px, 5vw, 64px);
+            text-shadow:
+                0 0 2px rgba(200, 200, 200, 0.5);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .target-word .letter-box.correct::before {
+            display: none;
+        }
+
+        .target-word .letter-box > span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .target-word .letter-box.correct {
+            background: linear-gradient(135deg, #ffeaa7, #55efc4);
+            border-color: #00b894;
+            animation: bounce 0.5s ease;
+        }
+
+        .target-word .letter-box.wrong {
+            background: rgba(255, 107, 107, 0.3);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-10px);
+            }
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .next-word-btn {
+            display: none;
+            margin: 20px auto;
+            font-size: 24px;
+            padding: 16px 32px;
+            background: #00b894;
+            box-shadow: 0 6px 0 #00916d;
+        }
+
+        .next-word-btn.visible {
+            display: block;
+        }
+
+        .typing-zone-small {
+            min-height: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="floating-shapes" aria-hidden="true">
+        <span class="shape circle" style="
+          width: 120px;
+          height: 120px;
+          background: rgba(255, 209, 102, 0.8);
+          top: 8%;
+          left: 6%;
+          animation-duration: 14s;
+        "></span>
+        <span class="shape circle" style="
+          width: 80px;
+          height: 80px;
+          background: rgba(116, 185, 255, 0.7);
+          top: 70%;
+          left: 10%;
+          animation-duration: 10s;
+        "></span>
+        <span class="shape circle" style="
+          width: 140px;
+          height: 140px;
+          background: rgba(162, 155, 254, 0.6);
+          top: 18%;
+          right: 8%;
+          animation-duration: 16s;
+        "></span>
+        <span class="shape circle" style="
+          width: 90px;
+          height: 90px;
+          background: rgba(255, 118, 117, 0.65);
+          bottom: 12%;
+          right: 18%;
+          animation-duration: 12s;
+        "></span>
+        <span class="shape triangle" style="top: 55%; right: 6%; animation-duration: 18s"></span>
+    </div>
+    <main class="game" aria-live="polite">
+        <h1 class="title">Word Learning Fun!</h1>
+        <p class="subtitle">Type the letters to reveal the colorful picture!</p>
+
+        <div class="word-image-container">
+            <img id="word-image" class="word-image" src="" alt="Mystery word">
+        </div>
+
+        <div id="target-word" class="target-word"></div>
+
+        <section class="typing-zone typing-zone-small" id="typing-zone" aria-label="Typing area" tabindex="0">
+            <span class="prompt">Type the first letter!</span>
+        </section>
+
+        <div class="controls">
+            <button type="button" id="next-word-btn" class="next-word-btn">Next Word</button>
+            <button type="button" id="sound-mode-btn">Sound: Voice 🎤</button>
+        </div>
+    </main>
+
+    <script type="module">
+        const typingZone = document.getElementById("typing-zone");
+        const nextWordButton = document.getElementById("next-word-btn");
+        const soundModeButton = document.getElementById("sound-mode-btn");
+        const targetWordDiv = document.getElementById("target-word");
+        const wordImage = document.getElementById("word-image");
+
+        if (!(typingZone instanceof HTMLElement)) {
+            throw new Error("Typing zone not found");
+        }
+
+        if (!(nextWordButton instanceof HTMLButtonElement)) {
+            throw new Error("Next word button not found");
+        }
+
+        if (!(soundModeButton instanceof HTMLButtonElement)) {
+            throw new Error("Sound mode button not found");
+        }
+
+        // Word database with local images
+        const wordDatabase = [
+            { word: "fish", image: "images/fish.png" },
+            { word: "bird", image: "images/bird.png" },
+            { word: "star", image: "images/star.png" },
+            { word: "moon", image: "images/moon.png" },
+            { word: "ball", image: "images/ball.png" },
+            { word: "book", image: "images/book.png" },
+            { word: "cup", image: "images/cup.png" },
+            { word: "shoe", image: "images/shoe.png" },
+            { word: "frog", image: "images/frog.png" },
+            { word: "bear", image: "images/bear.png" },
+            { word: "lion", image: "images/lion.png" },
+            { word: "boat", image: "images/boat.png" },
+            { word: "bell", image: "images/bell.png" },
+            { word: "drum", image: "images/drum.png" },
+            { word: "egg", image: "images/egg.png" },
+            { word: "fork", image: "images/fork.png" },
+            { word: "hand", image: "images/hand.png" },
+            { word: "key", image: "images/key.png" },
+            { word: "leaf", image: "images/leaf.png" },
+            { word: "pen", image: "images/pen.png" },
+            { word: "pig", image: "images/pig.png" },
+            { word: "cow", image: "images/cow.png" },
+            { word: "bat", image: "images/bat.png" },
+            { word: "ant", image: "images/ant.png" },
+            { word: "fly", image: "images/fly.png" },
+            { word: "crab", image: "images/crab.png" },
+            { word: "seal", image: "images/seal.png" },
+            { word: "deer", image: "images/deer.png" },
+            { word: "wolf", image: "images/wolf.png" },
+            { word: "goat", image: "images/goat.png" },
+            { word: "lamb", image: "images/lamb.png" },
+            { word: "ship", image: "images/ship.png" },
+            { word: "kite", image: "images/kite.png" },
+            { word: "bike", image: "images/bike.png" },
+            { word: "plane", image: "images/plane.png" },
+            { word: "train", image: "images/train.png" },
+            { word: "truck", image: "images/truck.png" },
+            { word: "house", image: "images/house.png" },
+            { word: "door", image: "images/door.png" },
+            { word: "bed", image: "images/bed.png" },
+            { word: "lamp", image: "images/lamp.png" },
+            { word: "clock", image: "images/clock.png" },
+            { word: "phone", image: "images/phone.png" },
+            { word: "apple", image: "images/apple.png" },
+            { word: "pear", image: "images/pear.png" },
+            { word: "corn", image: "images/corn.png" },
+            { word: "bread", image: "images/bread.png" },
+            { word: "cake", image: "images/cake.png" },
+            { word: "pizza", image: "images/pizza.png" },
+            { word: "carrot", image: "images/carrot.png" },
+            { word: "onion", image: "images/onion.png" },
+            { word: "milk", image: "images/milk.png" },
+            { word: "water", image: "images/water.png" },
+            { word: "spoon", image: "images/spoon.png" },
+            { word: "knife", image: "images/knife.png" },
+            { word: "plate", image: "images/plate.png" },
+            { word: "shirt", image: "images/shirt.png" },
+            { word: "boot", image: "images/boot.png" },
+            { word: "ring", image: "images/ring.png" },
+            { word: "gift", image: "images/gift.png" },
+            { word: "candy", image: "images/candy.png" },
+            { word: "tent", image: "images/tent.png" },
+            { word: "rain", image: "images/rain.png" },
+            { word: "snow", image: "images/snow.png" },
+            { word: "fire", image: "images/fire.png" },
+            { word: "light", image: "images/light.png" },
+            { word: "music", image: "images/music.png" },
+            { word: "heart", image: "images/heart.png" },
+            { word: "smile", image: "images/smile.png" }
+        ];
+
+        const speechQueue = [];
+        let isSpeaking = false;
+        let lastSpoken = "";
+        let voiceIndex = 0;
+        let availableVoices = [];
+        let soundMode = "voice"; // "voice" or "music"
+        let currentWord = null;
+        let currentLetterIndex = 0;
+
+        const colors = ["#ff6b6b", "#feca57", "#54a0ff", "#5f27cd", "#1dd1a1"];
+
+        // Initialize a new word
+        function initializeWord() {
+            currentWord = wordDatabase[Math.floor(Math.random() * wordDatabase.length)];
+            currentLetterIndex = 0;
+
+            // Set the image (desaturated)
+            wordImage.src = currentWord.image;
+            wordImage.style.filter = "saturate(0) brightness(0.3)";
+
+            // Create letter boxes
+            targetWordDiv.innerHTML = "";
+            for (let i = 0; i < currentWord.word.length; i++) {
+                const letterBox = document.createElement("span");
+                letterBox.className = "letter-box";
+                letterBox.textContent = "";
+                letterBox.dataset.letter = currentWord.word[i].toUpperCase();
+                letterBox.dataset.index = i;
+                targetWordDiv.appendChild(letterBox);
+            }
+
+            // Clear typing zone
+            typingZone.innerHTML = '<span class="prompt">Type the first letter!</span>';
+
+            // Hide next button
+            nextWordButton.classList.remove("visible");
+
+            // Speak the word
+            queueSpeech(`Type the word ${currentWord.word}`);
+        }
+
+        // Update image saturation based on progress
+        function updateImageSaturation() {
+            const progress = currentLetterIndex / currentWord.word.length;
+            const saturation = progress * 100;
+            const brightness = 0.3 + (progress * 0.7);
+            wordImage.style.filter = `saturate(${saturation}%) brightness(${brightness})`;
+
+            // Update CSS variables for animation
+            wordImage.style.setProperty('--current-saturation', `${saturation}%`);
+            wordImage.style.setProperty('--current-brightness', brightness);
+        }
+
+        // Trigger correct letter animation on image
+        function flashImageCorrect() {
+            wordImage.classList.remove('correct-flash');
+            // Force reflow to restart animation
+            void wordImage.offsetWidth;
+            wordImage.classList.add('correct-flash');
+            setTimeout(() => {
+                wordImage.classList.remove('correct-flash');
+            }, 600);
+        }
+
+        // Trigger wrong letter animation on image
+        function shakeImageWrong() {
+            wordImage.classList.remove('wrong-shake');
+            // Force reflow to restart animation
+            void wordImage.offsetWidth;
+            wordImage.classList.add('wrong-shake');
+            setTimeout(() => {
+                wordImage.classList.remove('wrong-shake');
+            }, 500);
+        }
+
+        const speakNext = () => {
+            if (isSpeaking || speechQueue.length === 0) {
+                return;
+            }
+            const message = speechQueue.shift();
+            if (!message) {
+                return;
+            }
+            const utterance = new SpeechSynthesisUtterance(message);
+            if (availableVoices.length > 0) {
+                const voice = availableVoices[voiceIndex % availableVoices.length];
+                if (voice) {
+                    utterance.voice = voice;
+                }
+            }
+            utterance.rate = 0.92 + Math.random() * 0.12;
+            utterance.pitch = 1.05 + Math.random() * 0.2;
+            utterance.onend = () => {
+                isSpeaking = false;
+                speakNext();
+            };
+            utterance.onerror = () => {
+                isSpeaking = false;
+                speakNext();
+            };
+            isSpeaking = true;
+            lastSpoken = message;
+            voiceIndex += 1;
+            window.speechSynthesis.speak(utterance);
+        };
+
+        const queueSpeech = (message) => {
+            speechQueue.push(message);
+            speakNext();
+        };
+
+        // Create confetti effect
+        const createConfetti = () => {
+            const confettiCount = 100;
+            const colors = ["#ff6b6b", "#feca57", "#54a0ff", "#5f27cd", "#1dd1a1", "#ff9ff3", "#ffeaa7"];
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement("div");
+                confetti.className = "confetti-piece";
+                confetti.style.left = Math.random() * 100 + "vw";
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (Math.random() * 10 + 5) + "px";
+                confetti.style.height = (Math.random() * 10 + 5) + "px";
+                confetti.style.animationDelay = Math.random() * 0.5 + "s";
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + "s";
+
+                document.body.appendChild(confetti);
+
+                // Remove confetti after animation
+                setTimeout(() => {
+                    confetti.remove();
+                }, 4000);
+            }
+        };
+
+        // Play celebration sound
+        const playCelebrationSound = () => {
+            if (soundMode === "music") {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, C (major chord)
+
+                notes.forEach((frequency, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = "sine";
+
+                    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+
+                    oscillator.start(audioContext.currentTime + index * 0.1);
+                    oscillator.stop(audioContext.currentTime + index * 0.1 + 0.8);
+                });
+            }
+        };
+
+        const makeParticle = (color) => {
+            const particle = document.createElement("span");
+            particle.className = "particle";
+            particle.style.background = color;
+            particle.style.setProperty(
+                "--x",
+                `${Math.floor(Math.random() * 140 - 70)}px`
+            );
+            particle.style.setProperty(
+                "--y",
+                `${Math.floor(Math.random() * 140 - 70)}px`
+            );
+            return particle;
+        };
+
+        const addLetter = (character) => {
+            const letter = document.createElement("span");
+            letter.className = "letter";
+            letter.style.color = colors[Math.floor(Math.random() * colors.length)];
+            letter.textContent = character;
+
+            const burst = document.createElement("span");
+            burst.className = "burst";
+
+            for (let index = 0; index < 6; index += 1) {
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                burst.appendChild(makeParticle(color));
+            }
+
+            letter.appendChild(burst);
+
+            // Create falling animation
+            const fallingLetter = document.createElement("span");
+            fallingLetter.className = "letter-falling";
+            fallingLetter.textContent = character;
+            fallingLetter.style.color = letter.style.color;
+
+            // Position falling letter at center top of screen
+            fallingLetter.style.left = "50vw";
+            fallingLetter.style.top = "10vh";
+
+            document.body.appendChild(fallingLetter);
+
+            // Remove prompt if exists
+            const prompt = typingZone.querySelector(".prompt");
+            if (prompt) {
+                prompt.remove();
+            }
+
+            // Calculate final position of the actual letter
+            typingZone.appendChild(letter);
+            const letterRect = letter.getBoundingClientRect();
+
+            // Set the end position for the falling animation
+            fallingLetter.style.setProperty("--end-x", `${letterRect.left + letterRect.width / 2 - window.innerWidth / 2}px`);
+            fallingLetter.style.setProperty("--end-y", `${letterRect.top + letterRect.height / 2 - window.innerHeight * 0.1}px`);
+
+            typingZone.scrollTop = typingZone.scrollHeight;
+
+            // Show the actual letter after animation completes
+            setTimeout(() => {
+                letter.classList.add("visible");
+                fallingLetter.remove();
+            }, 800);
+        };
+
+        const handleKey = (event) => {
+            if (!currentWord || event.key.length !== 1) {
+                return;
+            }
+            event.preventDefault();
+
+            const typedChar = event.key.toUpperCase();
+            const expectedChar = currentWord.word[currentLetterIndex].toUpperCase();
+            const letterBoxes = targetWordDiv.querySelectorAll(".letter-box");
+            const currentBox = letterBoxes[currentLetterIndex];
+
+            if (typedChar === expectedChar) {
+                // Correct letter!
+                const letterSpan = document.createElement("span");
+                letterSpan.textContent = expectedChar;
+                currentBox.innerHTML = "";
+                currentBox.appendChild(letterSpan);
+                currentBox.classList.add("correct");
+                addLetter(expectedChar);
+
+                queueSpeech(expectedChar.toLowerCase());
+
+                currentLetterIndex++;
+                updateImageSaturation();
+                flashImageCorrect();
+
+                // Check if word is complete
+                if (currentLetterIndex === currentWord.word.length) {
+                    // Word complete!
+                    wordImage.style.filter = "saturate(100%) brightness(1)";
+
+                    // Celebration!
+                    createConfetti();
+                    playCelebrationSound();
+                    queueSpeech(`Yay! You spelled ${currentWord.word}!`);
+
+                    // Automatically move to next word after 3 seconds
+                    setTimeout(() => {
+                        initializeWord();
+                    }, 3000);
+                } else {
+                    // Prompt for next letter
+                    const nextLetter = currentWord.word[currentLetterIndex].toUpperCase();
+                    const prompt = document.createElement("span");
+                    prompt.className = "prompt";
+                    prompt.textContent = `Type ${nextLetter}`;
+                    typingZone.querySelector(".prompt")?.remove();
+                    typingZone.appendChild(prompt);
+                }
+            } else {
+                // Wrong letter!
+                currentBox.classList.add("wrong");
+                shakeImageWrong();
+                setTimeout(() => {
+                    currentBox.classList.remove("wrong");
+                }, 500);
+
+                queueSpeech(`No, no, no! Type ${expectedChar.toLowerCase()}`);
+            }
+        };
+
+        const updateVoices = () => {
+            const voices = window.speechSynthesis.getVoices();
+            availableVoices = voices.filter((voice) => voice.lang.startsWith("en"));
+            if (availableVoices.length === 0) {
+                availableVoices = voices;
+            }
+        };
+
+        window.speechSynthesis.addEventListener("voiceschanged", updateVoices);
+        updateVoices();
+
+        document.addEventListener("keydown", handleKey);
+
+        nextWordButton.addEventListener("click", () => {
+            initializeWord();
+        });
+
+        soundModeButton.addEventListener("click", () => {
+            soundMode = soundMode === "voice" ? "music" : "voice";
+            soundModeButton.textContent = soundMode === "voice" ? "Sound: Voice 🎤" : "Sound: Music 🎵";
+        });
+
+        typingZone.addEventListener("click", () => {
+            typingZone.focus();
+            if (!document.fullscreenElement && document.body.requestFullscreen) {
+                document.body.requestFullscreen().catch(() => undefined);
+            }
+        });
+
+        window.addEventListener("load", () => {
+            typingZone.focus();
+            initializeWord();
+            if (document.body.requestFullscreen) {
+                document.body.requestFullscreen().catch(() => undefined);
+            }
+        });
+
+        window.addEventListener("blur", () => {
+            window.setTimeout(() => typingZone.focus(), 0);
+        });
+
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) {
+                typingZone.focus();
+            }
+        });
+    </script>
+
+
+</body>
+
+</html>
